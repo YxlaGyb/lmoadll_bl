@@ -43,18 +43,20 @@ class CursorProtocol(Protocol):
 
 class DatabaseAdapter:
     """数据库适配器基类"""
-    
+
     def __init__(self, config: dict[str, str]):
         """
         初始化适配器
-        
+
         :param config: 数据库配置字典
         """
         self.config: dict[str, str] = config
         self.connection: ConnectionProtocol | None = None
         self.cursor: CursorProtocol | None = None
         self._in_transaction: bool = False
+        self.created_at: float = 0.0
         self.db_prefix: str = self.config.get("prefix", "")
+        self.db_type: str | None = None
         
     def connect(self) -> None:
         """建立数据库连接"""

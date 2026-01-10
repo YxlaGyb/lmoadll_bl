@@ -5,7 +5,8 @@ ORM核心模块
 
 提供数据库连接池管理和ORM主类。
 """
-from typing import Dict, Optional, Any
+# from typing import Any
+from magic.utils.db.adapters.adapters import DatabaseAdapter
 from magic.utils.db.connection_pool import ConnectionPool
 
 
@@ -18,10 +19,10 @@ class ORM:
     
     def __init__(self):
         """初始化ORM实例"""
-        self._pools: Dict[str, ConnectionPool] = {}
-        self._default_db: Optional[str] = None
+        self._pools: dict[str, ConnectionPool] = {}
+        self._default_db: str | None = None
 
-    def register_db(self, name: str, db_type: str, config: Dict[str, Any], pool_size: int = 5) -> None:
+    def register_db(self, name: str, db_type: str, config: dict[str, str], pool_size: int = 5) -> None:
         """
         注册数据库连接
         
@@ -44,7 +45,7 @@ class ORM:
         if self._default_db is None:
             self._default_db = name
     
-    def get_db(self, name: Optional[str] = None):
+    def get_db(self, name: str | None = None) -> DatabaseAdapter:
         """
         从连接池获取数据库连接
         
@@ -66,7 +67,7 @@ class ORM:
         # 从连接池获取连接
         return self._pools[name].get_connection()
     
-    def return_db(self, adapter, name: Optional[str] = None) -> None:
+    def return_db(self, adapter: DatabaseAdapter, name: str | None = None) -> None:
         """
         归还数据库连接到连接池
         
@@ -102,5 +103,4 @@ class ORM:
         self._pools.clear()
 
 
-# 全局ORM实例
 db_orm = ORM()

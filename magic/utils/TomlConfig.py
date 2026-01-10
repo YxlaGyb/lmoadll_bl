@@ -4,7 +4,6 @@
 #@copyright  Copyright (c) 2025 lmoadll_bl team
 #@license  GNU General Public License 3.0
 """用于处理 TOML 配置文件的读取和写入操作"""
-
 import os
 import tomllib
 import pathlib
@@ -37,13 +36,13 @@ def check_config_file():
             dump(default_config, f)
 
 
-def DoesitexistConfigToml(a, b):
+def DoesitexistConfigToml(a:str, b:str) -> str | int | bool:
     """检查配置文件是否存在并读取"""
     if not os.path.exists(config_path):
         return False
     else:
         with open(config_path, "rb") as f:
-            config = tomllib.load(f)
+            config: dict[str, dict[str, str | int | bool]] = tomllib.load(f)
 
         if not config[a][b]:
             return False
@@ -51,7 +50,7 @@ def DoesitexistConfigToml(a, b):
             return config[a][b]
 
 
-def WriteConfigToml(a, b, c):
+def WriteConfigToml(a: str, b: str, c: str | int | bool) -> None:
     """检查键并写入配置文件"""
     # 检查配置文件是否存在, 不存在则创建新的配置文件和配置项
     if not os.path.exists(config_path):
