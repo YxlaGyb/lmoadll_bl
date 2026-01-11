@@ -144,7 +144,7 @@ def CheckSuperadminExists(admin_username, admin_email, admin_password, db_prefix
             db_orm.return_db(db, "default")
 
 
-def CreateSiteOption(db_prefix: str, sql_sqlite_path: str, option_name: str, option_value: str, user_id: int = 0) -> list[Union[bool, str]]:
+def CreateSiteOption(db_prefix: str, sql_sqlite_path: str, option_name: str, option_value: str, user_id: int = 0):
     """创建网站选项"""
     db = None
     try:
@@ -169,7 +169,7 @@ def CreateSiteOption(db_prefix: str, sql_sqlite_path: str, option_name: str, opt
             db_orm.return_db(db, "default")
 
 
-def InitVerificationDbConn(db_type: str, **kwargs) -> list[union[bool, Union[int, str]]]:
+def InitVerificationDbConn(db_type: str, **kwargs):
     """初始化数据库连接验证"""
     try:
         if db_type == "sqlite":
@@ -248,7 +248,7 @@ def InitVerificationDbConn(db_type: str, **kwargs) -> list[union[bool, Union[int
         return [False, str(e)]
 
 
-def GetOrSetSiteOption(db_prefix: str,sql_sqlite_path: str,option_name: str,option_value: Optional[str] = None,user_id: int = 0) -> List[Union[bool, str]]:
+def GetOrSetSiteOption(db_prefix: str,sql_sqlite_path: str,option_name: str,option_value = None,user_id: int = 0):
     """获取或设置网站选项"""
     db = None
     try:
@@ -367,7 +367,7 @@ def GetUserByEmail(username_email: str):
             db_orm.return_db(db, "default")
 
 
-def GetUserRoleByIdentity(user_identity: int) -> Union[list[Union[bool, str]], Optional[tuple[str, ...]]]:
+def GetUserRoleByIdentity(user_identity: int):
     """通过用户的uid查找用户的身份权限"""
     success, message, db, cursor, table_name = GetDbConnection("users")
     if not success:
@@ -443,7 +443,7 @@ def GetUserCount():
             db_orm.return_db(db, "default")
 
 
-def SearchUsers(keyword: str) -> Union[list[Union[bool, str]], list[dict[str, Any]]]:
+def SearchUsers(keyword: str):
     """
     根据关键词搜索用户
     支持搜索用户ID、姓名或邮箱

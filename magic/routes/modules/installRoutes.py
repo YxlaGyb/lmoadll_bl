@@ -1,4 +1,4 @@
-from flask import Blueprint
+from quart import Blueprint
 from magic.utils.install import install
 
 bp = Blueprint('install', __name__, url_prefix='/install')

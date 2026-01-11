@@ -4,7 +4,7 @@ Cookie管理工具模块
 该模块提供统一的Cookie设置、删除和验证功能, 用于管理用户认证相关的Cookie。
 """
 
-from flask import Response
+from quart import Response
 
 
 class CookieManager:
@@ -15,7 +15,7 @@ class CookieManager:
         """设置刷新令牌Cookie
         
         Args:
-            response: Flask响应对象
+            response: Quart响应对象
             refresh_token: 刷新令牌值
             
         Returns:
@@ -36,7 +36,7 @@ class CookieManager:
         """设置访问令牌Cookie
         
         Args:
-            response: Flask响应对象
+            response: Quart响应对象
             access_token: 访问令牌值
             
         Returns:
@@ -57,7 +57,7 @@ class CookieManager:
         """删除刷新令牌Cookie
         
         Args:
-            response: Flask响应对象
+            response: Quart响应对象
             
         Returns:
             Response: 删除Cookie后的响应对象
@@ -70,7 +70,7 @@ class CookieManager:
         """删除访问令牌Cookie
         
         Args:
-            response: Flask响应对象
+            response: Quart响应对象
             
         Returns:
             Response: 删除Cookie后的响应对象
@@ -83,7 +83,7 @@ class CookieManager:
         """删除所有认证相关的Cookie
         
         Args:
-            response: Flask响应对象
+            response: Quart响应对象
             
         Returns:
             Response: 删除所有Cookie后的响应对象

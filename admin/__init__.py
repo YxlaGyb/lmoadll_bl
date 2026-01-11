@@ -10,7 +10,7 @@
 """
 
 from functools import wraps
-from flask import Blueprint, send_file, Response, redirect, url_for, request
+from quart import Blueprint, send_file, Response, redirect, url_for, request
 from magic.utils.jwt import GetCurrentUserIdentity
 from magic.utils.db import GetUserRoleByIdentity
 import logging

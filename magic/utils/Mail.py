@@ -7,8 +7,8 @@
 
 import tomllib
 import logging
-from flask import Flask
-from flask_mail import Mail
+from quart import Quart
+# from quart_mail import Mail
 from magic.utils.TomlConfig import CONFIG_PATH
 from magic.middleware.errorhandler import handle_errors
 
@@ -18,8 +18,8 @@ MAIL_SENDER_NAME = "数数洞洞"
 SMTP_CONFIG = {}
 
 
-@handle_errors("初始化Flask-Mail失败")
-def init_mail(app: Flask):
+@handle_errors("初始化Quart-Mail失败")
+def init_mail(app: Quart):
     for key, value in SMTP_CONFIG.items():
         app.config[key] = value
     app.config['MAIL_DEBUG'] = False

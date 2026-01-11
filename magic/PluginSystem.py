@@ -231,7 +231,7 @@ class PluginManager:
         """注册所有插件的API路由
         
         Args:
-            app: Flask应用实例
+            app: Quart应用实例
             
         Returns:
             bool: 是否注册成功

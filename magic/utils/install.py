@@ -8,7 +8,7 @@
 import os
 import random
 import string
-from flask import Response, request, send_file, jsonify, abort
+from quart import Response, request, send_file, jsonify, abort
 from functools import wraps
 from magic.utils.TomlConfig import DoesitexistConfigToml, WriteConfigToml
 from magic.utils.Argon2Password import HashPassword

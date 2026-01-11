@@ -109,7 +109,7 @@ def archive_old_logs():
 
 
 # 使用环境变量来跟踪是否已经初始化过日志系统
-# 检查是否在Flask的重启过程中
+# 检查是否在Quart的重启过程中
 _is_reload = os.environ.get('WERKZEUG_RUN_MAIN') == 'true'
 _configured_logger = None # 全局变量，用于存储已配置的logger
 
@@ -122,10 +122,10 @@ def init_logger():
     if _configured_logger is not None:
         return _configured_logger
     
-    # 在Flask调试模式下，只有主进程才创建新的日志文件
-    # WERKZEUG_RUN_MAIN环境变量在Flask重启时为'true'
+    # 在Quart调试模式下，只有主进程才创建新的日志文件
+    # WERKZEUG_RUN_MAIN环境变量在Quart重启时为'true'
     if _is_reload:
-        # 这是Flask的重启过程，使用现有的日志文件
+        # 这是Quart的重启过程，使用现有的日志文件
         # 获取今天的日志文件列表，使用最新的一个
         log_dir = get_log_directory()
         current_date = datetime.datetime.now().strftime('%Y-%m-%d')

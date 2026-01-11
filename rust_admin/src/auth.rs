@@ -2,7 +2,7 @@ use actix_web::{web, Responder, HttpRequest};
 use log::{error, warn};
 use crate::jwt::{generate_token, validate_token};
 use crate::cookies::{create_refresh_token_cookie, create_clear_refresh_token_cookie};
-use crate::middleware::response::{success_response, custom_error_response, error_response};
+use crate::middleware::response::ResponseHandler;
 
 use crate::types::{
     login_request::LoginRequest,
@@ -22,7 +22,7 @@ pub async fn login_api(login_req: web::Json<LoginRequest>) -> impl Responder {
     
     // 检查请求数据是否为空
     if login_req.username_email.is_empty() || login_req.password.is_empty() {
-        return custom_error_response::<()>("邮箱和密码不能为空喵喵", None);
+        return ResponseHandler::custom_error("邮箱和密码不能为空喵喵");
     }
     
     // 验证用户凭据
@@ -37,7 +37,7 @@ pub async fn login_api(login_req: web::Json<LoginRequest>) -> impl Responder {
                 Ok(token) => token,
                 Err(e) => {
                     error!("生成access_token失败: {}", e);
-                    return error_response::<()>("生成令牌失败喵喵", None);
+                    return ResponseHandler::custom_error("生成令牌失败喵喵");
                 }
             };
             
@@ -46,7 +46,7 @@ pub async fn login_api(login_req: web::Json<LoginRequest>) -> impl Responder {
                 Ok(token) => token,
                 Err(e) => {
                     error!("生成refresh_token失败: {}", e);
-                    return error_response::<()>("生成令牌失败喵喵", None);
+                    return ResponseHandler::custom_error("生成令牌失败喵喵");
                 }
             };
             
@@ -61,7 +61,7 @@ pub async fn login_api(login_req: web::Json<LoginRequest>) -> impl Responder {
                 access_token,
             };
             
-            let mut response = success_response(Some(login_data), "登录成功喵");
+            let mut response = ResponseHandler::success(Some(login_data), "登录成功喵");
             response.add_cookie(&refresh_cookie).unwrap();
             response
             

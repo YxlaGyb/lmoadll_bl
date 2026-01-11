@@ -1,4 +1,4 @@
-from flask import send_from_directory
+from quart import send_from_directory
 
 class asses:
     @staticmethod

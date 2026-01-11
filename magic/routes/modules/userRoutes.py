@@ -1,4 +1,4 @@
-from flask import Blueprint
+from quart import Blueprint
 from magic.api.auth import auth
 
 bp = Blueprint('auth', __name__, url_prefix='/api/auth')

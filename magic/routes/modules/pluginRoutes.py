@@ -1,4 +1,4 @@
-from flask import Blueprint
+from quart import Blueprint
 from magic.api.PluginApi import plugins
 
 bp = Blueprint('plugins', __name__, url_prefix='/api/plugin')

@@ -7,7 +7,7 @@
 管理员专属登录页面
 """
 
-from flask import Blueprint, send_file, request, redirect
+from quart import Blueprint, send_file, request, redirect
 from magic.utils.jwt import GetCurrentUserIdentity
 
 

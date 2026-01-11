@@ -23,7 +23,7 @@ config_path = "config.toml"
 
 
 
-def check_config_file():
+async def check_config_file():
     """检查config.toml是否存在, 如果不存在则创建默认配置"""
     if not CONFIG_PATH.exists():
         default_config = {
@@ -36,7 +36,7 @@ def check_config_file():
             dump(default_config, f)
 
 
-def DoesitexistConfigToml(a:str, b:str) -> str | int | bool:
+async def DoesitexistConfigToml(a:str, b:str) -> str | int | bool:
     """检查配置文件是否存在并读取"""
     if not os.path.exists(config_path):
         return False
@@ -50,7 +50,7 @@ def DoesitexistConfigToml(a:str, b:str) -> str | int | bool:
             return config[a][b]
 
 
-def WriteConfigToml(a: str, b: str, c: str | int | bool) -> None:
+async def WriteConfigToml(a: str, b: str, c: str | int | bool) -> None:
     """检查键并写入配置文件"""
     # 检查配置文件是否存在, 不存在则创建新的配置文件和配置项
     if not os.path.exists(config_path):

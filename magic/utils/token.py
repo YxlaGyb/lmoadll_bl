@@ -13,11 +13,11 @@ JWT Token 管理模块
 import secrets
 import logging
 import jwt as pyjwt
-from flask import Flask, request
+from quart import Quart, request
 from typing import Dict
 from datetime import datetime, timezone, timedelta
 from magic.middleware.errorhandler import handle_errors
-from flask_jwt_extended import (
+from quart_jwt_extended import (
     JWTManager,
     create_access_token,
     create_refresh_token,
@@ -87,7 +87,7 @@ jwt_key_manager = JWTKeyManager(rotation_days=7, max_keys=8)
 
 
 @handle_errors("初始化JWT管理器失败")
-def InitJwtManager(app: Flask) -> JWTManager:
+def InitJwtManager(app: Quart) -> JWTManager:
     """初始化JWT管理器, 初始化JWT管理器并配置JWT相关设置"""
 
     if not app.config.get('JWT_SECRET_KEY'):
@@ -199,7 +199,7 @@ def RefreshToken(lmoadll_refresh_token, request=None):
     
     Args:
         refresh_token: 有效的Refresh Token
-        request: Flask请求对象,用于进行额外的安全验证
+        request: Quart请求对象,用于进行额外的安全验证
     
     Returns:
         str: 新的Access Token, 如果刷新失败则返回None

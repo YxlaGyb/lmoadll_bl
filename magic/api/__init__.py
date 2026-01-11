@@ -3,7 +3,7 @@
 #
 #@copyright  Copyright (c) 2025 lmoadll_bl team
 #@license  GNU General Public License 3.0
-from flask import Blueprint
+from quart import Blueprint
 from magic.api.AdminEndpoints import admin_bp
 
 

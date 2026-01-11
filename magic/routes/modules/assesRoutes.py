@@ -1,4 +1,4 @@
-from flask import Blueprint
+from quart import Blueprint
 from magic.asses import asses
 
 bp = Blueprint('asses', __name__, url_prefix='/asses')

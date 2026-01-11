@@ -13,10 +13,10 @@ import re
 import string
 import time
 import logging
-from flask import request, redirect, url_for
-from flask_mail import Message
+from quart import request, redirect, url_for
+# from quart_mail import Message
 from functools import wraps
-from magic.utils.Mail import mail, SMTP_CONFIG
+# from magic.utils.Mail import mail, SMTP_CONFIG
 from magic.utils.Argon2Password import VerifyPassword, HashPassword
 from magic.utils.jwt import CreateTokens, GetCurrentUserIdentity
 from magic.utils.TomlConfig import DoesitexistConfigToml

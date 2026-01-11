@@ -11,7 +11,7 @@
 - 233 - 自定义错误响应（已知错误）
 - 500 - 系统错误响应（未知错误）
 """
-from flask import jsonify, Response
+from quart import jsonify, Response
 from functools import wraps
 from collections.abc import Callable
 

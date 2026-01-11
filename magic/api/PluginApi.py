@@ -11,7 +11,7 @@
 import logging
 import os
 import json
-from flask import request
+from quart import request
 from magic.PluginSystem import get_plugin_manager
 from magic.middleware.response import response_handler
 from typing import Any
