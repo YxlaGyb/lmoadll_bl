@@ -77,7 +77,6 @@ docs/_build/
 .python-version
 
 .trae/
-
 .conda/
 themes/
 
@@ -91,3 +90,4 @@ requirements.txt
 pyproject.toml
 config.toml
 gunicorn.pid
+.clinerules/

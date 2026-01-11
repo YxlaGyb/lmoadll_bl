@@ -1,114 +1,96 @@
-use actix_web::{HttpResponse, ResponseError, body::BoxBody, http::StatusCode};
-use serde::Serialize;
-use std::fmt;
+use actix_web::{http::StatusCode, HttpResponse, Responder};
+use serde::{Deserialize, Serialize};
 
-// 响应状态码常量
-pub const SUCCESS_CODE: u32 = 200;
-pub const CUSTOM_ERROR_CODE: u32 = 233;
-pub const SYSTEM_ERROR_CODE: u32 = 500;
 
-// 通用响应结构
+// 定义类型
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum JsonValue {
+    String(String),
+    Number(f64),
+    Bool(bool),
+    Object(serde_json::Map<String, serde_json::Value>),
+    Array(Vec<serde_json::Value>),
+    Null,
+}
+
+
+// 响应结构体
 #[derive(Debug, Serialize)]
 pub struct ApiResponse<T> {
-    pub code: u32,
+    pub code: u16,
     pub message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<T>,
 }
 
-// 成功响应
-pub fn success_response<T: Serialize>(data: Option<T>, message: &str) -> HttpResponse {
-    HttpResponse::Ok().json(ApiResponse {
-        code: SUCCESS_CODE,
-        message: message.to_string(),
-        data,
-    })
-}
 
-// 自定义错误响应（已知错误）
-pub fn custom_error_response<T: Serialize>(message: &str, data: Option<T>) -> HttpResponse {
-    HttpResponse::Ok().json(ApiResponse {
-        code: CUSTOM_ERROR_CODE,
-        message: message.to_string(),
-        data,
-    })
-}
+// 中间件自动封装
+impl<T: Serialize> Responder for ApiResponse<T> {
+    type Body = actix_web::body::BoxBody;
 
-// 系统错误响应（未知错误）
-pub fn error_response<T: Serialize>(message: &str, data: Option<T>) -> HttpResponse {
-    HttpResponse::InternalServerError().json(ApiResponse {
-        code: SYSTEM_ERROR_CODE,
-        message: message.to_string(),
-        data,
-    })
-}
-
-// 响应处理错误类型
-#[derive(Debug)]
-pub struct ResponseErrorWrapper {
-    pub message: String,
-    pub error_type: ResponseErrorType,
-}
-
-#[derive(Debug)]
-pub enum ResponseErrorType {
-    CustomError,
-    SystemError,
-}
-
-impl fmt::Display for ResponseErrorWrapper {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.message)
+    fn respond_to(self, _req: &actix_web::HttpRequest) -> HttpResponse<Self::Body> {
+        let status = StatusCode::from_u16(self.code).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        HttpResponse::build(status).json(self)
     }
 }
 
-impl ResponseError for ResponseErrorWrapper {
-    fn error_response(&self) -> HttpResponse<BoxBody> {
-        match self.error_type {
-            ResponseErrorType::CustomError => custom_error_response::<()>(&self.message, None),
-            ResponseErrorType::SystemError => error_response::<()>(&self.message, None),
-        }
-    }
-    
-    fn status_code(&self) -> StatusCode {
-        match self.error_type {
-            ResponseErrorType::CustomError => StatusCode::OK, // 保持与Python一致，返回200状态码但code字段为233
-            ResponseErrorType::SystemError => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-}
 
-// 便捷的错误创建函数
-pub fn custom_error(message: &str) -> ResponseErrorWrapper {
-    ResponseErrorWrapper {
-        message: message.to_string(),
-        error_type: ResponseErrorType::CustomError,
-    }
-}
-
-pub fn system_error(message: &str) -> ResponseErrorWrapper {
-    ResponseErrorWrapper {
-        message: message.to_string(),
-        error_type: ResponseErrorType::SystemError,
-    }
-}
-
-// 响应处理中间件工具
+// 响应工厂
 pub struct ResponseHandler;
 
 impl ResponseHandler {
-    pub fn success<T: Serialize>(data: Option<T>, message: &str) -> HttpResponse {
-        success_response(data, message)
+    const SUCCESS_CODE: u16 = 200;
+    const CUSTOM_ERROR_CODE: u16 = 233;
+    const ERROR_CODE: u16 = 500;
+
+    pub fn success<T: Serialize>(data: T) -> ApiResponse<T> {
+        ApiResponse {
+            code: Self::SUCCESS_CODE,
+            message: "OK".to_string(),
+            data: Some(data),
+        }
     }
-    
-    pub fn custom_error<T: Serialize>(message: &str, data: Option<T>) -> HttpResponse {
-        custom_error_response(message, data)
+
+    pub fn custom_error(msg: &str) -> ApiResponse<()> {
+        ApiResponse {
+            code: Self::CUSTOM_ERROR_CODE,
+            message: msg.to_string(),
+            data: None,
+        }
     }
-    
-    pub fn error<T: Serialize>(message: &str, data: Option<T>) -> HttpResponse {
-        error_response(message, data)
+
+    pub fn error(msg: &str) -> ApiResponse<()> {
+        ApiResponse {
+            code: Self::ERROR_CODE,
+            message: msg.to_string(),
+            data: None,
+        }
     }
 }
 
-// 全局响应处理实例
-pub static RESPONSE_HANDLER: ResponseHandler = ResponseHandler;
+// #[get("/ok")]
+// async fn index() -> impl Responder {
+//     // 返回 dict 模式
+//     let mut data = serde_json::Map::new();
+//     data.insert("user_id".to_string(), serde_json::json!(1001));
+    
+//     ResponseHandler::success(data)
+// }
+
+// #[get("/error")]
+// async fn fail() -> impl Responder {
+//     ResponseHandler::custom_error("账户余额不足")
+// }
+
+// #[actix_web::main]
+// async fn main() -> std::io::Result<()> {
+//     HttpServer::new(|| {
+//         App::new()
+//             .service(index)
+//             .service(fail)
+//     })
+//     .bind(("127.0.0.1", 8080))?
+//     .run()
+//     .await
+// }

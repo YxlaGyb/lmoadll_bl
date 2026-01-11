@@ -7,7 +7,6 @@
 """
 import logging
 import time
-from typing import List, Tuple, Dict, Any, Optional, Union
 from magic.utils.TomlConfig import DoesitexistConfigToml, WriteConfigToml
 from magic.utils.db.orm import db_orm
 
@@ -145,7 +144,7 @@ def CheckSuperadminExists(admin_username, admin_email, admin_password, db_prefix
             db_orm.return_db(db, "default")
 
 
-def CreateSiteOption(db_prefix: str, sql_sqlite_path: str, option_name: str, option_value: str, user_id: int = 0) -> List[Union[bool, str]]:
+def CreateSiteOption(db_prefix: str, sql_sqlite_path: str, option_name: str, option_value: str, user_id: int = 0) -> list[Union[bool, str]]:
     """创建网站选项"""
     db = None
     try:
@@ -170,7 +169,7 @@ def CreateSiteOption(db_prefix: str, sql_sqlite_path: str, option_name: str, opt
             db_orm.return_db(db, "default")
 
 
-def InitVerificationDbConn(db_type: str, **kwargs) -> List[Union[bool, Union[int, str]]]:
+def InitVerificationDbConn(db_type: str, **kwargs) -> list[union[bool, Union[int, str]]]:
     """初始化数据库连接验证"""
     try:
         if db_type == "sqlite":
@@ -247,7 +246,7 @@ def InitVerificationDbConn(db_type: str, **kwargs) -> List[Union[bool, Union[int
             return [False, f"不支持的数据库类型: {db_type}"]
     except Exception as e:
         return [False, str(e)]
-    
+
 
 def GetOrSetSiteOption(db_prefix: str,sql_sqlite_path: str,option_name: str,option_value: Optional[str] = None,user_id: int = 0) -> List[Union[bool, str]]:
     """获取或设置网站选项"""
@@ -368,7 +367,7 @@ def GetUserByEmail(username_email: str):
             db_orm.return_db(db, "default")
 
 
-def GetUserRoleByIdentity(user_identity: int) -> Union[List[Union[bool, str]], Optional[Tuple[str, ...]]]:
+def GetUserRoleByIdentity(user_identity: int) -> Union[list[Union[bool, str]], Optional[tuple[str, ...]]]:
     """通过用户的uid查找用户的身份权限"""
     success, message, db, cursor, table_name = GetDbConnection("users")
     if not success:
@@ -444,7 +443,7 @@ def GetUserCount():
             db_orm.return_db(db, "default")
 
 
-def SearchUsers(keyword: str) -> Union[List[Union[bool, str]], List[Dict[str, Any]]]:
+def SearchUsers(keyword: str) -> Union[list[Union[bool, str]], list[dict[str, Any]]]:
     """
     根据关键词搜索用户
     支持搜索用户ID、姓名或邮箱
