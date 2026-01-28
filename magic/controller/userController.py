@@ -1,71 +1,206 @@
-import random
-import re
-import string
+# -*- coding: utf-8 -*-
 import time
 import logging
-from quart import request, redirect, url_for
-from quart_mail import Message
-from functools import wraps
-from magic.utils.Mail import mail, SMTP_CONFIG
-from magic.utils.Argon2Password import VerifyPassword, HashPassword
-from magic.utils.jwt import CreateTokens, GetCurrentUserIdentity
-from magic.utils.TomlConfig import DoesitexistConfigToml
-from magic.utils.db import db_orm, GetUserByEmail, GetDbConnection
-from magic.utils.cookies import cookie_manager
-from magic.PluginSystem import call_plugin_hook
-from magic.middleware.response import response_handler
+import random
+import string
+from magic.models.user import User
+from quart import request, jsonify
+from cachetools import TTLCache
+from magic.utils.validate import isValidName, isValidPassword, isValidEmail
+from magic.utils.cookies import setCookieToken
+from magic.utils.Argon2Password import hashPassword
+from magic.utils.Mail import sendMailAsync
+from magic.service.userService import UserService
+from magic.middleware.response import APIException
+from magic.middleware.auth import AuthMiddleware, getCurrentUser
+
+
+CODEEXPIRATIONTIME = 300
+verification_codes = TTLCache(maxsize=1000000, ttl=CODEEXPIRATIONTIME) # {email: {"code": 验证码, "hash": 验证码哈希, "expiresAt": 过期时间戳}}
+
+def verifyCode(email: str, code: str, codeSalt: str) -> tuple[bool, str | None]:
+    """验证验证码是否有效"""
+
+    code_data = verification_codes.get(email)
+    if not code_data:
+        return False, "验证码不存在或已过期喵喵"
+    if code != code_data['code']:
+        return False, "验证码错误喵喵"
+    if code_data['hash'] != codeSalt:
+        return False, "验证码哈希不匹配喵喵"
+    del verification_codes[email]
+    return True, None
 
 
 class UserController:
+    @staticmethod
+    async def login():
+        data = await request.get_json()
+        email, password = (data["email"], data["password"])
+
+        if not isValidEmail(email) or not isValidPassword(password):
+            raise APIException("邮箱或密码格式不正确喵", code=233)
+
+        result = await UserService.loginUser(email, password)
+        if isinstance(result, int):
+            raise APIException(f"{result}", code=500)
+        payload = {
+            "user_info": "登录成功喵"
+        }
+        response = jsonify(payload) 
+        setCookieToken(response, result["token"])
+        print(result)
+        return response
     
     @staticmethod
-    @response_handler.response_middleware
-    def login_api():
-        data = request.get_json()
-        if not data["username_email"] or not data["password"]:
-            return response_handler.custom_error_response("邮箱和密码不能为空喵喵")
+    async def register():
+        data = await request.get_json()
+        if not isValidEmail(data["email"]) or not isValidName(data["username"]) or not isValidPassword(data["password"]):
+            raise APIException("用户名或密码格式不正确喵", code=233)
+        if len(data["username"]) < 2 or len(data["username"]) > 50:
+            raise APIException("用户名长度应在2-50个字符之间喵喵", code=233)
+        if len(data["password"]) < 8:
+            raise APIException("密码长度应不少于8个字符喵喵", code=233)
+        if len(data["code"]) != 6:
+            raise APIException("验证码应为6位字母+数字喵喵", code=233)
+        if await UserService.getUserByEmail(data["email"]):
+            raise APIException("该邮箱已被注册喵喵", code=233)
+        is_valid, error_message = verifyCode(data["email"], data["code"], data["codeSalt"])
+        if not is_valid:
+            raise APIException(error_message or "验证码验证失败喵喵", code=233)
         
-        user = GetUserByEmail(data["username_email"])
-        if not user:
-            return response_handler.custom_error_response("邮箱或密码错误喵喵")
+        passwordHash = hashPassword(data["password"])
+        if not passwordHash:
+            raise APIException("密码哈希处理失败喵喵", code=500)
+        clientIp = request.remote_addr or ""
         
-        if not VerifyPassword(user['password'], data["password"]):
-            return response_handler.custom_error_response("邮箱或密码错误喵喵")
-        
-        tokens = CreateTokens(identity=str(user['uid']))
-        if not tokens:
-            return response_handler.error_response("生成令牌失败喵喵")
+        await UserService.createUser(
+            name=data["username"],
+            email=data["email"],
+            password=passwordHash,
+            ip=clientIp
+        )
 
-        # access_token = tokens['lmoadllUser']
-        refresh_token = tokens['lmoadll_refresh_token']
+        result = await UserService.loginUser(data["email"], data["password"])
+        if isinstance(result, int):
+            raise APIException(f"{result}", code=500)
+        tokenResult = result["token"]
+        payload = {}
+        response = jsonify(payload)
+        setCookieToken(response, tokenResult)
+        return {"message": "注册成功喵"}
 
-        response_data = {
-            "uid": user['uid'],
-            "name": user['name'],
-            "avatar": "",
-            "group": user['group']
+    @staticmethod    
+    async def sendEmailCodeRegister():
+        data = await request.get_json()
+
+        if not isValidEmail(data["email"]):
+            raise APIException("邮箱格式错误喵", code=233)
+        if await UserService.getUserByEmail(data["email"]):
+            raise APIException("您的邮箱已经被使用了喵, 请换一个试试喵", code=233)
+
+        code = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+        codeSalt = hashPassword(code)
+        if not codeSalt:
+            logging.error("验证码哈希失败")
+            raise APIException("验证码生成失败喵喵", code=500)
+        
+        htmlContent = f"""
+        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+            <h2 style="color: #333;">✨ 注册验证码待查收</h2>
+            <p>您的验证码是 <b style="font-size: 24px; color: #007bff;">{code}</b></p>
+            <p style="color: #666;">请在 {CODEEXPIRATIONTIME // 60} 分钟内完成验证，请勿泄露喵~</p>
+            <hr style="border: none; border-top: 1px solid #eee;">
+            <footer style="font-size: 12px; color: #999;">来自：数数洞洞平台</footer>
+        </div>
+        """
+
+        mailSent = await sendMailAsync("注册验证码", [data["email"]], htmlContent)
+        if not mailSent:
+            raise APIException("邮件服务连接超时, 请稍后再试喵喵", code=500)
+
+        expiresAt = int(time.time()) + CODEEXPIRATIONTIME
+        verification_codes[data["email"]] = {
+            "code": code,
+            "hash": codeSalt,
+            "createdAt": int(time.time()),
+            "expiresAt": expiresAt
         }
-        response = response_handler.success_response(response_data, "登录成功喵")
+        print(f"验证码 {code} 已成功生成并存储到内存中, 过期时间为 {expiresAt}")
+        return {"codeSalt": codeSalt}
+    
+    @staticmethod
+    @AuthMiddleware()
+    async def getUserProfile():
+        """获取用户信息"""
+        user = await getCurrentUser()
+        print(user)
+        return jsonify({"code": 200, "data": "xxx"})
+    
+    @staticmethod
+    @AuthMiddleware()
+    async def getUserByUsername():
+        """查询用户列表"""
+        name = request.args.get("name", "")
+        exactly = request.args.get("exactly", "")
+        if not name.strip():
+            raise APIException("用户名不能为空喵", code=233)
+        if exactly == '1':
+            user = await UserService.getUserByUsernameExactly(name)
+        else:
+            user = await UserService.getUserByUsername(name)
+        return jsonify({
+            "code": 200,
+            "data": user
+        })
+    
+    @staticmethod
+    @AuthMiddleware()
+    async def updateUserRoles():
+        pass
+    
+    @staticmethod
+    @AuthMiddleware()
+    async def createUser():
+        """创建用户"""
+        data = await request.get_json()
+        if not isValidEmail(data.get("email")) or not isValidName(data.get("username")) or not isValidPassword(data.get("password")):
+            raise APIException("参数格式不正确喵", code=233)
         
-        response = cookie_manager.set_refresh_token(response, refresh_token)
+        passwordHash = hashPassword(data["password"])
+        if not passwordHash:
+            raise APIException("密码哈希处理失败喵喵", code=500)
         
-        # response = cookie_manager.set_access_token(response, access_token)
-
-        try:
-            db = db_orm.get_db("default")
-            success, message, _, _, table_name = GetDbConnection("users")
-            if success:
-                current_time = int(time.time())  # 获取当前时间戳
-                # 使用同一个连接执行更新操作
-                db.execute(f"UPDATE {table_name} SET lastLogin = ? WHERE uid = ?", (current_time, user['uid']))
-                db.commit()
-        except Exception as e:
-            logging.warning(f"更新用户最后登录时间失败喵: {e}")
-        finally:
-            # 确保连接被归还到连接池
-            try:
-                db_orm.return_db(db, "default")
-            except:
-                pass
-
-        return response
+        result = await UserService.createUser(
+            name=data["username"],
+            email=data["email"],
+            password=passwordHash,
+            ip=request.remote_addr or ""
+        )
+        return jsonify({"code": 200, "message": "用户创建成功喵喵", "data": {"uid": result.uid}})
+    
+    @staticmethod
+    @AuthMiddleware()
+    async def updateUser():
+        """修改用户信息"""
+        data = await request.get_json()
+        if not data.get("uid"):
+            raise APIException("用户ID不能为空喵", code=233)
+        
+        result = await UserService.updateUser(data["uid"], data)
+        if not result:
+            raise APIException("用户不存在或修改失败喵喵", code=500)
+        return jsonify({"code": 200, "message": "用户信息修改成功喵喵"})
+    
+    @staticmethod
+    @AuthMiddleware()
+    async def deleteUser():
+        """删除用户"""
+        data = await request.get_json()
+        if not data.get("uid"):
+            raise APIException("用户ID不能为空喵", code=233)
+        
+        result = await UserService.deleteUser(data["uid"])
+        if not result:
+            raise APIException("用户不存在或删除失败喵喵", code=500)
+        return jsonify({"code": 200, "message": "用户删除成功喵喵"})

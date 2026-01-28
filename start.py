@@ -7,6 +7,7 @@
 import asyncio
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
-from lmoadll_bl import app
+from lmoadll_bl import app, init_app
 
+asyncio.run(init_app())
 asyncio.run(serve(app, Config()))

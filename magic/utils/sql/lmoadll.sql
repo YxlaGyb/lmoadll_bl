@@ -5,7 +5,7 @@ create table lmoadll_users
         constraint key
             primary key,
     name       varchar(32)  default null,
-    password   varchar(64)  default null,
+    password   varchar(255)  default null,
     mail       varchar(150) default null,
     url        varchar(150) default null,
     createdAt  int(10)      default 0,

@@ -17,8 +17,8 @@ import logging
 
 
 __all__ = [
-    'HashPassword', 
-    'VerifyPassword'
+    'hashPassword', 
+    'verifyPassword'
 ]
 
 ph = PasswordHasher(
@@ -30,7 +30,7 @@ ph = PasswordHasher(
 )
 
 
-def HashPassword(password: str):
+def hashPassword(password: str):
     """对密码进行哈希处理"""
     try:
         if not password:
@@ -44,7 +44,7 @@ def HashPassword(password: str):
         return None
 
 
-def VerifyPassword(pw_hash: str, password: str):
+def verifyPassword(pw_hash: str, password: str):
     """验证密码是否匹配哈希值"""
     try:
         if not pw_hash or not password:

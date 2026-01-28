@@ -2,7 +2,7 @@ import os
 import importlib
 import glob
 
-def combine_routes(app):
+async def combineRoutes(app):
     modules_dir = os.path.join('magic', 'routes', 'modules')
     module_files = glob.glob(f"{modules_dir}/*.py")
     for file in module_files:
